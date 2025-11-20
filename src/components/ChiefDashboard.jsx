@@ -42,11 +42,16 @@ export default function ChiefDashboard({ stats, results }) {
                         <Trophy size={16} /> Winner
                       </span>
                     ) : (
-                      <button className="text-sm px-3 py-1.5 rounded-md bg-slate-700 text-white">View</button>
+                      <span className="text-sm text-blue-300/80">—</span>
                     )}
                   </td>
                 </tr>
               ))}
+              {(!results || results.length === 0) && (
+                <tr>
+                  <td colSpan={4} className="px-5 py-4 text-blue-300/70">No results yet. Try refreshing to ensure demo data is loaded.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

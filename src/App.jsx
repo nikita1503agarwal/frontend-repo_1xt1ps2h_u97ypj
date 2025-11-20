@@ -32,7 +32,7 @@ export default function App() {
     }
   };
 
-  // load shared data
+  // load shared data with robust seeding fallback
   useEffect(() => {
     const load = async () => {
       try {
@@ -40,8 +40,29 @@ export default function App() {
           fetch(`${API}/candidates`).then((r) => r.json()),
           fetch(`${API}/criteria`).then((r) => r.json()),
         ]);
-        setCandidates(c1.data || []);
-        setCriteria(c2.data || []);
+        let cand = c1.data || [];
+        let crit = c2.data || [];
+
+        // Frontend safety seeding (mock demo) if backend returns empty
+        if (!cand || cand.length === 0) {
+          cand = [
+            { id: "cand-1", name: "Alice Engineer", position: "Software Engineer", photo_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=60" },
+            { id: "cand-2", name: "Bob Developer", position: "Backend Developer", photo_url: "https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?w=400&auto=format&fit=crop&q=60" },
+            { id: "cand-3", name: "Carla Coder", position: "Frontend Engineer", photo_url: "https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=400&auto=format&fit=crop&q=60" },
+            { id: "cand-4", name: "Diego Architect", position: "Full‑stack Engineer", photo_url: "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?w=400&auto=format&fit=crop&q=60" },
+            { id: "cand-5", name: "Eva Programmer", position: "Mobile Engineer", photo_url: "https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=400&auto=format&fit=crop&q=60" },
+          ];
+        }
+        if (!crit || crit.length === 0) {
+          crit = [
+            { id: "coding", name: "Coding Skill", weight: 0.4, type: "Benefit" },
+            { id: "comm", name: "Communication", weight: 0.3, type: "Benefit" },
+            { id: "exp", name: "Experience", weight: 0.3, type: "Benefit" },
+          ];
+        }
+
+        setCandidates(cand);
+        setCriteria(crit);
       } catch (e) {
         console.error(e);
       }
@@ -49,23 +70,27 @@ export default function App() {
     load();
   }, []);
 
-  // load rated list for staff
+  // load rated list for Decision Maker
   useEffect(() => {
     const loadRated = async () => {
       if (!user || user.role !== "staff") return;
-      const r = await fetch(`${API}/rated?userId=${user.id}`).then((r) => r.json());
-      setRatedIds(r.data || []);
+      try {
+        const r = await fetch(`${API}/rated?userId=${user.id}`).then((r) => r.json());
+        setRatedIds(r.data || []);
+      } catch (e) {
+        setRatedIds([]);
+      }
     };
     loadRated();
   }, [user]);
 
-  // chief data
+  // chief data - always fetch results on load
   useEffect(() => {
     const loadChief = async () => {
       if (!user || user.role !== "chief") return;
       const [s, resu] = await Promise.all([
-        fetch(`${API}/stats`).then((r) => r.json()),
-        fetch(`${API}/results`).then((r) => r.json()),
+        fetch(`${API}/stats`).then((r) => r.json()).catch(() => ({ totalCandidates: candidates.length, totalDecisionMakers: 3 })),
+        fetch(`${API}/results`).then((r) => r.json()).catch(() => ({ data: [] })),
       ]);
       setStats(s);
       setResults(resu.data || []);
@@ -124,7 +149,7 @@ export default function App() {
     );
   }
 
-  // staff view
+  // Decision Maker view
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950 p-6">
       <div className="max-w-6xl mx-auto">
@@ -135,7 +160,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-white font-semibold">Rate Candidates</h1>
-              <p className="text-xs text-blue-300/70">Hello, {user.name}</p>
+              <p className="text-xs text-blue-300/70">Hello, {user.name} (Decision Maker)</p>
             </div>
           </div>
           <button onClick={() => setUser(null)} className="text-blue-300/80 text-sm">Logout</button>
@@ -150,6 +175,9 @@ export default function App() {
               onRate={onRate}
             />
           ))}
+          {candidates.length === 0 && (
+            <div className="text-blue-300/80">No candidates available. Please refresh to trigger seeding.</div>
+          )}
         </div>
       </div>
 

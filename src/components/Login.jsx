@@ -15,7 +15,7 @@ export default function Login({ onLogin }) {
             className="group px-6 py-5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition flex items-center justify-center gap-2"
           >
             <User className="group-hover:scale-110 transition" />
-            Login as Staff
+            Login as Decision Maker
           </button>
           <button
             onClick={() => onLogin({ role: "chief" })}
